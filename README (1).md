@@ -9,14 +9,7 @@ This project is a simple content-based movie recommendation system that helps us
 - Easy to extend with more metadata (e.g., cast, directors, keywords).
 - Simple user interface via function calls or integration with web apps (e.g., Flask).
 
-## 🚀 Getting Started
 
-### Clone the repository:
-
-```bash
-git clone https://github.com/your-username/movie-recommendation-system.git
-cd movie-recommendation-system
-```
 
 ### 🧪 Run on Google Colab
 
@@ -68,10 +61,3 @@ movie-recommendation-system/
 - Integrate with a front-end using Flask or React.
 - Deploy using Streamlit or FastAPI.
 
-## 🛡️ License
-
-This project is licensed under the MIT License. Feel free to use and modify.
-
----
-
-📫 **Developed by [Your Name]** | Contact: your.email@example.com

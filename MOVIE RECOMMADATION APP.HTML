@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>Movie Recommendation App</title>
+<style>
+  /* Reset and base */
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: #eee;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 10px;
+  }
+  h1 {
+    margin: 8px 0 15px;
+    font-weight: 700;
+    font-size: 1.9rem;
+    letter-spacing: 1.2px;
+    color: #ffd700;
+    text-shadow: 0 0 8px #ffb700bb;
+  }
+  #app {
+    background: #152f4acc;
+    border-radius: 15px;
+    box-shadow: 0 8px 24px #000000cc;
+    padding: 15px;
+    width: 100%;
+    max-width: 340px;
+    min-height: 580px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  /* Search container */
+  .search-container {
+    position: relative;
+    margin-bottom: 12px;
+    width: 100%;
+  }
+  input[type="text"] {
+    width: 100%;
+    font-size: 1.15rem;
+    padding: 10px 14px;
+    border-radius: 35px;
+    border: none;
+    outline: none;
+    color: #222;
+  }
+  /* Autocomplete list */
+  ul.autocomplete-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border-radius: 0 0 12px 12px;
+    max-height: 180px;
+    overflow-y: auto;
+    box-shadow: 0 3px 15px #00000099;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    z-index: 10;
+  }
+  ul.autocomplete-results li {
+    padding: 8px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+  }
+  ul.autocomplete-results li:hover,
+  ul.autocomplete-results li.active {
+    background: #ffbf00bd;
+    color: #222;
+  }
+
+  /* Movie Detail */
+  .movie-detail {
+    display: flex;
+    margin-bottom: 15px;
+    gap: 12px;
+  }
+  .movie-poster {
+    width: 100px;
+    min-width: 100px;
+    height: 150px;
+    border-radius: 10px;
+    background: #444;
+    object-fit: cover;
+    box-shadow: 0 0 7px 1px #ffd700bb;
+    flex-shrink: 0;
+  }
+  .movie-info {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .movie-title {
+    font-weight: 700;
+    font-size: 1.3rem;
+    margin-bottom: 6px;
+    color: #ffd700;
+    text-shadow: 0 0 5px #ffbf00cc;
+  }
+  .movie-genres {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #eee;
+    background: #ffbf0040;
+    padding: 4px 10px;
+    border-radius: 18px;
+    max-width: max-content;
+    box-shadow: 0 0 4px #ffbf0070;
+  }
+
+  /* Recommendations */
+  .recommendations-title {
+    font-weight: 700;
+    font-size: 1.4rem;
+    margin-bottom: 10px;
+    color: #ffde59;
+    border-bottom: 2px solid #ffbf00cc;
+    padding-bottom: 6px;
+  }
+  .recommendations-list {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 12px;
+    padding-bottom: 10px;
+  }
+  .recommendation-card {
+    background: #22385a;
+    border-radius: 14px;
+    width: 100px;
+    flex-shrink: 0;
+    box-shadow: 0 0 8px #ffbf00aa;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+  }
+  .recommendation-card:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 12px #ffd700;
+  }
+  .rec-poster {
+    width: 100px;
+    height: 150px;
+    border-radius: 14px 14px 0 0;
+    object-fit: cover;
+  }
+  .rec-info {
+    padding: 6px 8px 8px 8px;
+    text-align: center;
+  }
+  .rec-title {
+    color: #ffd700;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  .rec-genres {
+    color: #eee;
+    font-size: 0.75rem;
+    margin-top: 4px;
+  }
+
+  /* Scroll style */
+  ::-webkit-scrollbar {
+    height: 7px;
+    width: 7px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: #ffbf00cc;
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* Responsive for small mobile */
+  @media (max-width: 380px) {
+    #app {
+      max-width: 100%;
+      min-height: 600px;
+    }
+  }
+</style>
+</head>
+<body>
+<h1>Movie Recommendation App</h1>
+<div id="app" aria-label="Movie recommendation application container">
+  <div class="search-container" role="search">
+    <input
+      type="text"
+      id="movie-search"
+      autocomplete="off"
+      placeholder="Search for a movie..."
+      aria-label="Search for a movie"
+      aria-autocomplete="list"
+      aria-controls="autocomplete-list"
+      aria-haspopup="listbox"
+    />
+    <ul id="autocomplete-list" class="autocomplete-results" role="listbox" tabindex="-1" hidden></ul>
+  </div>
+
+  <section id="selected-movie" aria-live="polite"></section>
+
+  <section>
+    <h2 class="recommendations-title">Recommended Movies</h2>
+    <div id="recommendations" class="recommendations-list" role="region" aria-live="polite" aria-label="List of recommended movies"></div>
+  </section>
+</div>
+
+<script>
+  // Movie dataset - sample data
+  // Each movie: id, title, genres (array), poster url, description keywords array
+  const movies = [
+    {
+      id: 1,
+      title: "REBEL",
+      genres: ["Action", "Sci-Fi", "Thriller"],
+      poster: "https://m.media-amazon.com/images/I/51s+ibOQh0L._AC_.jpg",
+      keywords: ["dream", "subconscious", "heist", "mind-bending", "thriller"],
+    },
+    {
+      id: 2,
+      title: "JAWAN",
+      genres: ["Drama"],
+      poster: "https://m.media-amazon.com/images/I/519NBNHX5BL._AC_SY679_.jpg",
+      keywords: ["prison", "hope", "friendship", "escape"],
+    },
+    {
+      id: 3,
+      title: "The SMILE MAN",
+      genres: ["Action", "Crime", "Drama"],
+      poster: "https://m.media-amazon.com/images/I/51AJHcBnvHL._AC_.jpg",
+      keywords: ["batman", "joker", "hero", "crime", "gotham"],
+    },
+    {
+      id: 4,
+      title: "DRAGON",
+      genres: ["Drama", "Romance"],
+      poster: "https://m.media-amazon.com/images/I/51ET+3iHYRL._AC_.jpg",
+      keywords: ["shipwreck", "romance", "tragedy", "love"],
+    },
+    {
+      id: 5,
+      title: "CAPTAIN",
+      genres: ["Action", "Sci-Fi"],
+      poster: "https://m.media-amazon.com/images/I/51EG732BV3L._AC_.jpg",
+      keywords: ["virtual reality", "matrix", "revolution", "sci-fi"],
+    },
+    {
+      id: 6,
+      title: "DEAR",
+      genres: ["Drama", "Romance"],
+      poster: "https://m.media-amazon.com/images/I/41cP6p6b9kL._AC_.jpg",
+      keywords: ["life story", "inspiration", "love", "history"],
+    },
+    {
+      id: 7,
+      title: "TEENZ",
+      genres: ["Adventure", "Drama", "Sci-Fi"],
+      poster: "https://m.media-amazon.com/images/I/81cdV-5hKnL._AC_SY679_.jpg",
+      keywords: ["space", "time travel", "black hole", "family", "sci-fi"],
+    },
+    {
+      id: 8,
+      title: "THE LOST CITY",
+      genres: ["Action", "Adventure", "Drama"],
+      poster: "https://m.media-amazon.com/images/I/51A9bntuq+L._AC_.jpg",
+      keywords: ["gladiator", "rome", "revenge", "battle", "epic"],
+    },
+    {
+      id: 9,
+      title: "The Avengers",
+      genres: ["Action", "Adventure", "Sci-Fi"],
+      poster: "https://m.media-amazon.com/images/I/81dCOkZ6QuL._AC_SY679_.jpg",
+      keywords: ["superhero", "team", "marvel", "battle", "earth"],
+    },
+    {
+      id: 10,
+      title: "Jurassic Park",
+      genres: ["Adventure", "Sci-Fi", "Thriller"],
+      poster: "https://m.media-amazon.com/images/I/91FqUQv6FgL._AC_SY679_.jpg",
+      keywords: ["dinosaurs", "park", "science", "thriller"],
+    }
+  ];
+
+  const searchInput = document.getElementById("movie-search");
+  const autocompleteList = document.getElementById("autocomplete-list");
+  const selectedMovieSection = document.getElementById("selected-movie");
+  const recommendationsContainer = document.getElementById("recommendations");
+
+  let activeAutocompleteIndex = -1;
+
+  function clearAutocomplete() {
+    autocompleteList.innerHTML = "";
+    autocompleteList.hidden = true;
+    activeAutocompleteIndex = -1;
+  }
+
+  // Safe text highlight helper
+  function escapeHtml(text) {
+    return text.replace(/[&<>"']/g, (m) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    })[m]);
+  }
+
+  function highlightMatch(text, query) {
+    const regex = new RegExp(`(${query.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')})`, "gi");
+    return text.replace(regex, "<mark>$1</mark>");
+  }
+
+  // Build movie item for autocomplete results
+  function buildAutocompleteItem(movie, query) {
+    const item = document.createElement("li");
+    item.setAttribute("role", "option");
+    item.innerHTML = highlightMatch(escapeHtml(movie.title), query);
+    item.addEventListener("click", () => {
+      selectMovie(movie.id);
+      clearAutocomplete();
+      searchInput.value = movie.title;
+    });
+    return item;
+  }
+
+  // Search movies by title substring (case insensitive)
+  function searchMovies(query) {
+    if (!query) return [];
+    query = query.toLowerCase();
+    return movies.filter(m => m.title.toLowerCase().includes(query)).slice(0, 7);
+  }
+
+  // Recommend movies based on content similarity: genres and keywords commonality
+  function getRecommendations(selectedMovie) {
+    if (!selectedMovie) return [];
+
+    // Score function: count common genres + count common keywords (weighted equally)
+    function scoreMovie(movie) {
+      if (movie.id === selectedMovie.id) return -1; // exclude itself
+      const commonGenres = movie.genres.filter(g => selectedMovie.genres.includes(g)).length;
+      const commonKeywords = movie.keywords.filter(k => selectedMovie.keywords.includes(k)).length;
+      return commonGenres * 2 + commonKeywords; // weight genres heavier
+    }
+
+    // Sort by score descending, return top 5
+    return movies
+      .map(m => ({ movie: m, score: scoreMovie(m) }))
+      .filter(scored => scored.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5)
+      .map(scored => scored.movie);
+  }
+
+  // Format genre array as comma separated string
+  function formatGenres(genres) {
+    return genres.join(", ");
+  }
+
+  // Render selected movie detail
+  function renderSelectedMovie(movie) {
+    if (!movie) {
+      selectedMovieSection.innerHTML = "";
+      recommendationsContainer.innerHTML = "";
+      return;
+    }
+    selectedMovieSection.innerHTML = `
+      <article class="movie-detail" aria-label="Selected movie details">
+        <img class="movie-poster" src="${movie.poster}" alt="Poster of ${escapeHtml(movie.title)}" />
+        <div class="movie-info">
+          <h3 class="movie-title">${escapeHtml(movie.title)}</h3>
+          <div class="movie-genres" aria-label="Genres">${escapeHtml(formatGenres(movie.genres))}</div>
+        </div>
+      </article>
+    `;
+  }
+
+  // Render recommended movies list
+  function renderRecommendations(recommendedMovies) {
+    recommendationsContainer.innerHTML = "";
+    if (recommendedMovies.length === 0) {
+      recommendationsContainer.textContent = "No recommendations available.";
+      return;
+    }
+    recommendedMovies.forEach(movie => {
+      const card = document.createElement("div");
+      card.className = "recommendation-card";
+      card.setAttribute("tabindex", "0");
+      card.setAttribute("role", "button");
+      card.setAttribute("aria-label", `View details of recommended movie: ${movie.title}`);
+      card.innerHTML = `
+        <img class="rec-poster" src="${movie.poster}" alt="Poster of ${escapeHtml(movie.title)}" />
+        <div class="rec-info">
+          <div class="rec-title">${escapeHtml(movie.title)}</div>
+          <div class="rec-genres">${escapeHtml(formatGenres(movie.genres))}</div>
+        </div>
+      `;
+      card.addEventListener("click", () => {
+        selectMovie(movie.id);
+        searchInput.value = movie.title;
+        clearAutocomplete();
+        searchInput.focus();
+      });
+      card.addEventListener("keyup", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          card.click();
+        }
+      });
+      recommendationsContainer.appendChild(card);
+    });
+  }
+
+  // Select movie by id and update UI
+  function selectMovie(movieId) {
+    const movie = movies.find(m => m.id === movieId);
+    renderSelectedMovie(movie);
+    const recommendations = getRecommendations(movie);
+    renderRecommendations(recommendations);
+  }
+
+  // Handle search input events
+  searchInput.addEventListener("input", () => {
+    const query = searchInput.value.trim();
+    if (!query) {
+      clearAutocomplete();
+      return;
+    }
+    const results = searchMovies(query);
+    if (results.length === 0) {
+      autocompleteList.innerHTML = "<li role='option' aria-disabled='true' style='padding: 8px 15px; color: #777;'>No movies found</li>";
+      autocompleteList.hidden = false;
+      activeAutocompleteIndex = -1;
+      return;
+    }
+    autocompleteList.innerHTML = "";
+    results.forEach((movie, i) => {
+      const item = buildAutocompleteItem(movie, query);
+      if (i === 0) {
+        item.classList.add("active");
+        activeAutocompleteIndex = 0;
+      }
+      autocompleteList.appendChild(item);
+    });
+    autocompleteList.hidden = false;
+  });
+
+  // Keyboard navigation on autocomplete list
+  searchInput.addEventListener("keydown", e => {
+    if (autocompleteList.hidden || autocompleteList.children.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (activeAutocompleteIndex < autocompleteList.children.length - 1) {
+        autocompleteList.children[activeAutocompleteIndex].classList.remove("active");
+        activeAutocompleteIndex++;
+        autocompleteList.children[activeAutocompleteIndex].classList.add("active");
+        autocompleteList.children[activeAutocompleteIndex].scrollIntoView({ block: "nearest" });
+      }
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      if (activeAutocompleteIndex > 0) {
+        autocompleteList.children[activeAutocompleteIndex].classList.remove("active");
+        activeAutocompleteIndex--;
+        autocompleteList.children[activeAutocompleteIndex].classList.add("active");
+        autocompleteList.children[activeAutocompleteIndex].scrollIntoView({ block: "nearest" });
+      }
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (activeAutocompleteIndex >= 0 && autocompleteList.children[activeAutocompleteIndex]) {
+        autocompleteList.children[activeAutocompleteIndex].click();
+      }
+    } else if (e.key === "Escape") {
+      clearAutocomplete();
+    }
+  });
+
+  // Initial: no movie selected
+  renderSelectedMovie(null);
+  renderRecommendations([]);
+
+</script>
+</body>
+</html>
+</content>
+</create_file>
